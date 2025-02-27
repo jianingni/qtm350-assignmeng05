@@ -1,0 +1,221 @@
+{
+  "cells": [
+    {
+      "cell_type": "markdown",
+      "metadata": {},
+      "source": [
+        "---\n",
+        "title: \"QTM 350 Assignmen 5\"\n",
+        "author: \"Nora Ni\"\n",
+        "date: \"Feb 26, 2026\"\n",
+        "format:\n",
+        "  html: default\n",
+        "  pdf: default\n",
+        "bibliography: references.bib\n",
+        "---"
+      ],
+      "id": "d2f8aa6e"
+    },
+    {
+      "cell_type": "code",
+      "metadata": {},
+      "source": [
+        "# Task 2\n",
+        "# Import data\n",
+        "import pandas as pd\n",
+        "import wbgapi as wb\n",
+        "import matplotlib.pyplot as plt\n",
+        "import seaborn as sns\n",
+        "\n",
+        "wdi_data = pd.read_csv(\"/Users/noora_ni0321/Desktop/QTM 350/Assignment 5/wdi.csv\")"
+      ],
+      "id": "429314a0",
+      "execution_count": null,
+      "outputs": []
+    },
+    {
+      "cell_type": "code",
+      "metadata": {},
+      "source": [
+        "# Define the indicators to download\n",
+        "indicators = {\n",
+        "    'gdp_per_capita': 'NY.GDP.PCAP.CD',\n",
+        "    'gdp_growth_rate': 'NY.GDP.MKTP.KD.ZG',\n",
+        "    'inflation_rate': 'FP.CPI.TOTL.ZG',\n",
+        "    'unemployment_rate': 'SL.UEM.TOTL.ZS',\n",
+        "    'total_population': 'SP.POP.TOTL',\n",
+        "    'life_expectancy': 'SP.DYN.LE00.IN',\n",
+        "    'adult_literacy_rate': 'SE.ADT.LITR.ZS',\n",
+        "    'income_inequality': 'SI.POV.GINI',\n",
+        "    'health_expenditure_gdp_share': 'SH.XPD.CHEX.GD.ZS',\n",
+        "    'measles_immunisation_rate': 'SH.IMM.MEAS',\n",
+        "    'education_expenditure_gdp_share': 'SE.XPD.TOTL.GD.ZS',\n",
+        "    'primary_school_enrolment_rate': 'SE.PRM.ENRR',\n",
+        "    'exports_gdp_share': 'NE.EXP.GNFS.ZS'\n",
+        "}\n",
+        "\n",
+        "# Get the list of country codes for the \"World\" region\n",
+        "country_codes = wb.region.members('WLD')\n",
+        "\n",
+        "# Download data for countries only in 2022\n",
+        "df = wb.data.DataFrame(indicators.values(), economy=country_codes, time=2022, skipBlanks=True, labels=True).reset_index()\n",
+        "\n",
+        "# Delete the 'economy' column\n",
+        "df = df.drop(columns=['economy'], errors='ignore')\n",
+        "\n",
+        "# Create a reversed dictionary mapping indicator codes to names\n",
+        "# Rename the columns and convert all names to lowercase\n",
+        "df.rename(columns=lambda x: {v: k for k, v in indicators.items()}.get(x, x).lower(), inplace=True)\n",
+        "\n",
+        "# Sort 'country' in ascending order\n",
+        "df = df.sort_values('country', ascending=True)\n",
+        "\n",
+        "# Reset the index after sorting\n",
+        "df = df.reset_index(drop=True)\n",
+        "\n",
+        "# Display the number of rows and columns\n",
+        "print(df.shape)\n",
+        "\n",
+        "# Display the first few rows of the data\n",
+        "print(df.head(3))\n",
+        "\n",
+        "# Save the data to a CSV file\n",
+        "df.to_csv('wdi.csv', index=False)"
+      ],
+      "id": "fcea7e70",
+      "execution_count": null,
+      "outputs": []
+    },
+    {
+      "cell_type": "markdown",
+      "metadata": {},
+      "source": [
+        "## Explanatory Data Analysis\n"
+      ],
+      "id": "2d5c59c8"
+    },
+    {
+      "cell_type": "code",
+      "metadata": {},
+      "source": [
+        "# Task 3\n",
+        "# Select relevant indicators\n",
+        "list = [\"country\", \"gdp_per_capita\", \"life_expectancy\", \"unemployment_rate\"]\n",
+        "eda_data = df[list]\n",
+        "\n",
+        "# Summary statistics\n",
+        "summary = eda_data.describe()\n",
+        "summary"
+      ],
+      "id": "597aac32",
+      "execution_count": null,
+      "outputs": []
+    },
+    {
+      "cell_type": "markdown",
+      "metadata": {},
+      "source": [
+        "### Summary of Findings\n",
+        "\n",
+        "The dataset highlights significant global disparities in economic and social indicators. \n",
+        "\n",
+        "- **GDP per capita** averages **$20,520**, but a high standard deviation (**$30,640**) and a maximum of **$226,052** indicate strong income inequality.  \n",
+        "- **Life expectancy** is more consistent, averaging **72.42 years**, with most countries between **67 and 78 years**.  \n",
+        "- **Unemployment rates** vary widely, averaging **7.23%**, with extremes from **0.13% to 35.36%**.  \n",
+        "\n",
+        "Overall, economic disparities are stark, while life expectancy shows more stability.\n",
+        "\n",
+        "## Visualization\n"
+      ],
+      "id": "d7270701"
+    },
+    {
+      "cell_type": "code",
+      "metadata": {},
+      "source": [
+        "# Task 4\n",
+        "# Bar Chart: GDP per Capita by Country\n",
+        "\n",
+        "# Sort data by GDP per capita\n",
+        "sorted_data = eda_data.sort_values(\"gdp_per_capita\", ascending=False).head(10)\n",
+        "\n",
+        "plt.figure(figsize=(10, 6))\n",
+        "sns.barplot(y=sorted_data[\"country\"], x=sorted_data[\"gdp_per_capita\"], palette=\"viridis\")\n",
+        "plt.xlabel(\"GDP per Capita (USD)\")\n",
+        "plt.ylabel(\"Country\")\n",
+        "plt.title(\"Top 10 Countries by GDP per Capita (2022)\")\n",
+        "plt.savefig(\"gdp_per_capita_bar.png\")\n",
+        "\n",
+        "# Save the figure before showing it\n",
+        "plt.savefig(\"top_10_gdp.png\", dpi=300)\n",
+        "\n",
+        "plt.show()"
+      ],
+      "id": "c08f15aa",
+      "execution_count": null,
+      "outputs": []
+    },
+    {
+      "cell_type": "code",
+      "metadata": {},
+      "source": [
+        "# Scatter Plot: GDP per Capita vs Life Expectancy\n",
+        "plt.figure(figsize=(8, 5))\n",
+        "sns.scatterplot(x=wdi_data[\"gdp_per_capita\"], y=wdi_data[\"life_expectancy\"])\n",
+        "plt.xlabel(\"GDP per Capita (USD)\")\n",
+        "plt.ylabel(\"Life Expectancy (years)\")\n",
+        "plt.title(\"GDP per Capita vs. Life Expectancy (2022)\")\n",
+        "plt.savefig(\"gdp_vs_life_expectancy.png\")\n",
+        "\n",
+        "plt.savefig(\"gdp_vs_life.png\", dpi=300)\n",
+        "\n",
+        "plt.show()"
+      ],
+      "id": "d03de6a2",
+      "execution_count": null,
+      "outputs": []
+    },
+    {
+      "cell_type": "code",
+      "metadata": {},
+      "source": [
+        "# Task 5\n",
+        "summary_table = eda_data.groupby(\"country\").mean().reset_index()\n",
+        "summary_table.head(10)"
+      ],
+      "id": "fe41baf3",
+      "execution_count": null,
+      "outputs": []
+    },
+    {
+      "cell_type": "code",
+      "metadata": {},
+      "source": [
+        "# Task 6\n",
+        "# Bar Chart - Top 10 Countries by GDP per Capita\n",
+        "top_countries = df.nlargest(10, 'gdp_per_capita')\n",
+        "\n",
+        "plt.figure(figsize=(10,5))\n",
+        "plt.bar(top_countries['country'], top_countries['gdp_per_capita'], color='blue')\n",
+        "plt.xlabel(\"Country\")\n",
+        "plt.ylabel(\"GDP per Capita\")\n",
+        "plt.title(\"Top 10 Countries by GDP per Capita (2022)\")\n",
+        "plt.xticks(rotation=45)\n",
+        "plt.show()\n"
+      ],
+      "id": "0339fd06",
+      "execution_count": null,
+      "outputs": []
+    }
+  ],
+  "metadata": {
+    "kernelspec": {
+      "name": "python3",
+      "language": "python",
+      "display_name": "Python 3 (ipykernel)",
+      "path": "/opt/anaconda3/share/jupyter/kernels/python3"
+    }
+  },
+  "nbformat": 4,
+  "nbformat_minor": 5
+}

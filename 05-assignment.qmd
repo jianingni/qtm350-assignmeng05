@@ -1,0 +1,160 @@
+---
+title: "QTM 350 Assignmen 5"
+author: "Nora Ni"
+date: "Feb 26, 2026"
+format:
+  html: default
+  pdf: default
+bibliography: references.bib
+---
+
+```{python}
+# Task 2
+# Import data
+import pandas as pd
+import wbgapi as wb
+import matplotlib.pyplot as plt
+import seaborn as sns
+
+wdi_data = pd.read_csv("/Users/noora_ni0321/Desktop/QTM 350/Assignment 5/wdi.csv")
+
+```
+
+```{python}
+# Define the indicators to download
+indicators = {
+    'gdp_per_capita': 'NY.GDP.PCAP.CD',
+    'gdp_growth_rate': 'NY.GDP.MKTP.KD.ZG',
+    'inflation_rate': 'FP.CPI.TOTL.ZG',
+    'unemployment_rate': 'SL.UEM.TOTL.ZS',
+    'total_population': 'SP.POP.TOTL',
+    'life_expectancy': 'SP.DYN.LE00.IN',
+    'adult_literacy_rate': 'SE.ADT.LITR.ZS',
+    'income_inequality': 'SI.POV.GINI',
+    'health_expenditure_gdp_share': 'SH.XPD.CHEX.GD.ZS',
+    'measles_immunisation_rate': 'SH.IMM.MEAS',
+    'education_expenditure_gdp_share': 'SE.XPD.TOTL.GD.ZS',
+    'primary_school_enrolment_rate': 'SE.PRM.ENRR',
+    'exports_gdp_share': 'NE.EXP.GNFS.ZS'
+}
+
+# Get the list of country codes for the "World" region
+country_codes = wb.region.members('WLD')
+
+# Download data for countries only in 2022
+df = wb.data.DataFrame(indicators.values(), economy=country_codes, time=2022, skipBlanks=True, labels=True).reset_index()
+
+# Delete the 'economy' column
+df = df.drop(columns=['economy'], errors='ignore')
+
+# Create a reversed dictionary mapping indicator codes to names
+# Rename the columns and convert all names to lowercase
+df.rename(columns=lambda x: {v: k for k, v in indicators.items()}.get(x, x).lower(), inplace=True)
+
+# Sort 'country' in ascending order
+df = df.sort_values('country', ascending=True)
+
+# Reset the index after sorting
+df = df.reset_index(drop=True)
+
+# Display the number of rows and columns
+print(df.shape)
+
+# Display the first few rows of the data
+print(df.head(3))
+
+# Save the data to a CSV file
+df.to_csv('wdi.csv', index=False)
+
+```
+
+## Explanatory Data Analysis
+
+```{python}
+# Task 3
+# Select relevant indicators
+list = ["country", "gdp_per_capita", "life_expectancy", "unemployment_rate"]
+eda_data = df[list]
+
+# Summary statistics
+summary = eda_data.describe()
+summary
+
+```
+
+### Summary of Findings
+
+The dataset highlights significant global disparities in economic and social indicators. 
+
+- **GDP per capita** averages **$20,520**, but a high standard deviation (**$30,640**) and a maximum of **$226,052** indicate strong income inequality.  
+- **Life expectancy** is more consistent, averaging **72.42 years**, with most countries between **67 and 78 years**.  
+- **Unemployment rates** vary widely, averaging **7.23%**, with extremes from **0.13% to 35.36%**.  
+
+Overall, economic disparities are stark, while life expectancy shows more stability.
+
+## Visualization
+
+```{python}
+# Task 4
+# Bar Chart: GDP per Capita by Country
+
+# Sort data by GDP per capita
+sorted_data = eda_data.sort_values("gdp_per_capita", ascending=False).head(10)
+
+plt.figure(figsize=(10, 6))
+sns.barplot(y=sorted_data["country"], x=sorted_data["gdp_per_capita"], palette="viridis")
+plt.xlabel("GDP per Capita (USD)")
+plt.ylabel("Country")
+plt.title("Top 10 Countries by GDP per Capita (2022)")
+plt.savefig("gdp_per_capita_bar.png")
+
+# Save the figure before showing it
+plt.savefig("top_10_gdp.png", dpi=300)
+
+plt.show()
+```
+
+
+```{python}
+# Scatter Plot: GDP per Capita vs Life Expectancy
+plt.figure(figsize=(8, 5))
+sns.scatterplot(x=wdi_data["gdp_per_capita"], y=wdi_data["life_expectancy"])
+plt.xlabel("GDP per Capita (USD)")
+plt.ylabel("Life Expectancy (years)")
+plt.title("GDP per Capita vs. Life Expectancy (2022)")
+plt.savefig("gdp_vs_life_expectancy.png")
+
+plt.savefig("gdp_vs_life.png", dpi=300)
+
+plt.show()
+
+```
+
+```{python}
+
+# Task 5
+summary_table = eda_data.groupby("country").mean().reset_index()
+summary_table.head(10)
+
+```
+
+```{python}
+# Task 6
+# Bar Chart - Top 10 Countries by GDP per Capita
+top_countries = df.nlargest(10, 'gdp_per_capita')
+
+plt.figure(figsize=(10,5))
+plt.bar(top_countries['country'], top_countries['gdp_per_capita'], color='blue')
+plt.xlabel("Country")
+plt.ylabel("GDP per Capita")
+plt.title("Top 10 Countries by GDP per Capita (2022)")
+plt.xticks(rotation=45)
+plt.show()
+
+
+```
+
+## Bibliography 
+1. World Bank. International Economics Department. Development Data Group, and World Bank. International Economics Dept. Development Data Group. World development indicators. World Bank, 1978.
+
+2. Zaman, Sojib Bin, et al. "An association of total health expenditure with GDP and life expectancy." Journal of Medical Research and Innovation 1.2 (2017): AU7-AU12.

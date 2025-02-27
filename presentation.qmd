@@ -1,0 +1,132 @@
+---
+title: "Data Analysis Presentation"
+author: "Nora Ni"
+date: "Feb 26, 2025"
+format: revealjs
+bibliography: references.bib
+---
+
+## Introduction
+This dataset, obtained from the World Development Indicators (WDI), provides a global snapshot of key economic and social metrics for the year 2022. It includes 217 countries and 14 variables such as GDP per capita, life expectancy, inflation rate, unemployment rate, and income inequality. The dataset facilitates comparative analysis of economic performance, social well-being, and disparities across nations.
+
+## Dataset
+
+```{python}
+import pandas as pd
+import wbgapi as wb
+import matplotlib.pyplot as plt
+import seaborn as sns
+
+wdi_data = pd.read_csv("/Users/noora_ni0321/Desktop/QTM 350/Assignment 5/wdi.csv")
+
+# Define the indicators to download
+indicators = {
+    'gdp_per_capita': 'NY.GDP.PCAP.CD',
+    'gdp_growth_rate': 'NY.GDP.MKTP.KD.ZG',
+    'inflation_rate': 'FP.CPI.TOTL.ZG',
+    'unemployment_rate': 'SL.UEM.TOTL.ZS',
+    'total_population': 'SP.POP.TOTL',
+    'life_expectancy': 'SP.DYN.LE00.IN',
+    'adult_literacy_rate': 'SE.ADT.LITR.ZS',
+    'income_inequality': 'SI.POV.GINI',
+    'health_expenditure_gdp_share': 'SH.XPD.CHEX.GD.ZS',
+    'measles_immunisation_rate': 'SH.IMM.MEAS',
+    'education_expenditure_gdp_share': 'SE.XPD.TOTL.GD.ZS',
+    'primary_school_enrolment_rate': 'SE.PRM.ENRR',
+    'exports_gdp_share': 'NE.EXP.GNFS.ZS'
+}
+
+# Get the list of country codes for the "World" region
+country_codes = wb.region.members('WLD')
+
+# Download data for countries only in 2022
+df = wb.data.DataFrame(indicators.values(), economy=country_codes, time=2022, skipBlanks=True, labels=True).reset_index()
+
+# Delete the 'economy' column
+df = df.drop(columns=['economy'], errors='ignore')
+
+# Create a reversed dictionary mapping indicator codes to names
+# Rename the columns and convert all names to lowercase
+df.rename(columns=lambda x: {v: k for k, v in indicators.items()}.get(x, x).lower(), inplace=True)
+
+# Sort 'country' in ascending order
+df = df.sort_values('country', ascending=True)
+
+# Reset the index after sorting
+df = df.reset_index(drop=True)
+
+# Display the number of rows and columns
+print(df.shape)
+
+# Display the first few rows of the data
+print(df.head(3))
+
+# Save the data to a CSV file
+df.to_csv('wdi.csv', index=False)
+
+# Select relevant indicators
+list = ["country", "gdp_per_capita", "life_expectancy", "unemployment_rate"]
+eda_data = df[list]
+
+# Summary statistics
+summary = eda_data.describe()
+summary
+
+```
+
+## Data Visualization
+
+### Bar Chart
+
+```{python}
+# Bar Chart: GDP per Capita by Country
+
+# Sort data by GDP per capita
+sorted_data = eda_data.sort_values("gdp_per_capita", ascending=False).head(10)
+
+plt.figure(figsize=(10, 6))
+sns.barplot(y=sorted_data["country"], x=sorted_data["gdp_per_capita"], palette="viridis")
+plt.xlabel("GDP per Capita (USD)")
+plt.ylabel("Country")
+plt.title("Top 10 Countries by GDP per Capita (2022)")
+plt.savefig("gdp_per_capita_bar.png")
+
+# Save the figure before showing it
+plt.savefig("top_10_gdp.png", dpi=300)
+
+plt.show()
+
+```
+
+### Scatter Plot
+
+```{python}
+plt.figure(figsize=(8, 5))
+sns.scatterplot(x=wdi_data["gdp_per_capita"], y=wdi_data["life_expectancy"])
+plt.xlabel("GDP per Capita (USD)")
+plt.ylabel("Life Expectancy (years)")
+plt.title("GDP per Capita vs. Life Expectancy (2022)")
+plt.savefig("gdp_vs_life_expectancy.png")
+
+plt.savefig("gdp_vs_life.png", dpi=300)
+
+plt.show()
+```
+
+## Summary Statistics
+
+```{python}
+summary_table = eda_data.groupby("country").mean().reset_index()
+summary_table.head(10)
+
+```
+
+## Conclusion
+The analysis highlights significant economic disparities globally. GDP per capita varies widely, with a high standard deviation, indicating stark income inequality among nations. Life expectancy shows less variation, averaging around 72.4 years, suggesting global advancements in healthcare and living conditions. Unemployment rates are highly dispersed, reflecting diverse labor market conditions across different economies. The findings underscore the need for targeted policies to bridge economic gaps and enhance overall social well-being.
+
+## Bibliography 
+1. World Bank. International Economics Department. Development Data Group, and World Bank. International Economics Dept. Development Data Group. World development indicators. World Bank, 1978.
+
+2. Zaman, Sojib Bin, et al. "An association of total health expenditure with GDP and life expectancy." Journal of Medical Research and Innovation 1.2 (2017): AU7-AU12.
+
+## Thank you! 
